@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 from socket import *
 from threading import Thread
-from cifra import Cifra
 import re
 import hashlib
 
@@ -36,8 +35,7 @@ def inicia_servidor(servidor_soc):
     while True:
         conexao, end_remoto = servidor_soc.accept()
         enviar_para_cliente(conexao, get_usuarios_conectados("Usuários conectados: {}"))
-        t = Thread(target=trata_nova_conexao, args=(conexao, end_remoto))
-        t.setDaemon(True)
+        t = Thread(target=trata_nova_conexao, args=(conexao, end_remoto), daemon=True)
         t.start()
 
 
@@ -56,9 +54,7 @@ def enviar_para_todos(nick, msg_remota, is_default=False):
                 conteudo_mensagem = re.match(r"SEND(.*)", msg_remota).group(1).strip()
             else:
                 conteudo_mensagem = re.match(r"SEND(.*)TO", msg_remota).group(1).strip()
-            conteudo_mensagem_descriptografado = Cifra.descriptografar_conteudo(
-                conteudo_mensagem)
-            mensagem = "Mensagem pública de %s: %s" % (nick, conteudo_mensagem_descriptografado)
+            mensagem = "Mensagem pública de %s: %s" % (nick, conteudo_mensagem)
             enviar_para_cliente(conexao_envio, mensagem)
 
 
@@ -145,8 +141,7 @@ def trata_nova_conexao(con, end_remoto):
 if __name__ == '__main__':
     try:
         servidorSoc = socket(AF_INET, SOCK_STREAM)  # Socket TCP
-        t2 = Thread(target=inicia_servidor, args=(servidorSoc,))
-        t2.setDaemon(True)
+        t2 = Thread(target=inicia_servidor, args=(servidorSoc,), daemon=True)
         t2.start()
 
         while True:
@@ -158,6 +153,6 @@ if __name__ == '__main__':
 
     except timeout:
         print("Tempo exedido!")
-    # except error:
-    #     print("Erro no Servidor:", host)
-    #     exit(1)
+    except error:
+        print("Erro no Servidor:", error)
+        exit(1)

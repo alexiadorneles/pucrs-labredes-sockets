@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 from socket import*
 from threading import Thread
-from cifra import Cifra
 import hashlib
 import codecs
 import sys
@@ -50,7 +49,7 @@ def criptografar_conteudo(string_input, is_default=False):
     conteudo_mensagem = re.match(r"SEND(.*)", string_input).group(1).strip() \
         if is_default \
         else re.match(r"SEND(.*)TO", string_input).group(1).strip()
-    return Cifra.criptografar_conteudo(conteudo_mensagem)
+    return conteudo_mensagem
 
 
 if __name__ == '__main__':
@@ -65,18 +64,17 @@ if __name__ == '__main__':
         receber_resposta_servidor(clienteSoc, True)
 
         while True:
-            nick = raw_input('Informe o seu nome de usuario: \n').decode('utf-8')
+            nick = input('Informe o seu nome de usuario: \n')
             converter_e_enviar(clienteSoc, nick)
             msg = receber_resposta_servidor(clienteSoc, True)
             if "com sucesso" in msg: break
 
-        t = Thread(target=receber_resposta_servidor, args=(clienteSoc,))
-        t.setDaemon(True)
+        t = Thread(target=receber_resposta_servidor, args=(clienteSoc,), daemon=True)
         t.start()
 
         printar_comandos()
         while True:
-            string_input = raw_input('').decode('utf-8')
+            string_input = input('')
             if string_input is not '':
                 comando = string_input.split()[0]
                 if comando == 'QUIT':
