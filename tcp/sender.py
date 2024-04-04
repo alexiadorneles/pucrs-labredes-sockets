@@ -1,7 +1,7 @@
 import socket
 
 # Server configuration
-SERVER_HOST = '127.0.0.1'  # Server's IP address
+SERVER_HOST = '192.168.64.3'  # Server's IP address
 SERVER_PORT = 12345        # Port to connect to
 
 def send_file(filename):
