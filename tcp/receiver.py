@@ -1,7 +1,7 @@
 import socket
 
 # Server configuration
-HOST = '192.168.64.3'  # Loopback address
+HOST = '127.0.0.1'  # Loopback address
 PORT = 12345        # Port to listen on
 BUFFER_SIZE = 1024  # Size of the buffer for receiving data
 
