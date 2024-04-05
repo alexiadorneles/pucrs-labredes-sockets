@@ -21,4 +21,4 @@ def send_file(filename):
         print("File sent successfully")
 
 if __name__ == "__main__":
-    send_file("../large_file.txt")
+    send_file("../small_file.txt")
