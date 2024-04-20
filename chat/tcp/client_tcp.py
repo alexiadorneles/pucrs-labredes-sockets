@@ -35,9 +35,8 @@ def converter_e_enviar(cliente_soc, conteudo):
 def printar_comandos():
     custom_print("--------------------------------------------------------------------\n")
     custom_print(
-        "Lista de comandos: \n-QUIT = sair do chat\n-LIST = lista os usuários conectados\n-SEND mensagem TO usuario = "
-        "Para enviar uma mensagem, substituindo os campos corretamente.\n-HELP = mostra novamente a lista de "
-        "comandos.\n-SET DEFAULT usuario = seta o destinatario default e dispensa o uso do TO")
+        "Lista de comandos: \n-QUIT = sair do chat\n-SEND mensagem TO usuario = "
+        "Para enviar uma mensagem, substituindo os campos corretamente.")
     custom_print("--------------------------------------------------------------------\n")
 
 
@@ -83,8 +82,6 @@ if __name__ == '__main__':
                     clienteSoc.close()
                     exit(1)
                     break
-                elif comando == 'LIST':
-                    converter_e_enviar(clienteSoc, string_input)
                 elif comando == 'SEND':
                     if "TO" not in string_input:
                         conteudo_criptografado = criptografar_conteudo(string_input, True)
@@ -93,11 +90,6 @@ if __name__ == '__main__':
                         conteudo_criptografado = criptografar_conteudo(string_input)
                         usuarioAlvo = string_input.split("TO")[1].strip()
                         converter_e_enviar(clienteSoc, "SEND %s TO %s" % (conteudo_criptografado, usuarioAlvo))
-                elif comando == 'SET' and string_input.split()[1] == 'DEFAULT':
-                    default_setado = True
-                    converter_e_enviar(clienteSoc, string_input)
-                elif comando == 'HELP':
-                    printar_comandos()
                 else:
                     custom_print('Comando inválido.\nDigite HELP para ver a lista de comandos novamente\n ')
 
