@@ -23,3 +23,29 @@ def send_file(filename):
 
 if __name__ == "__main__":
     send_file("../large_file.txt")
+
+
+
+import socket
+
+# # Server configuration
+# SERVER_HOST = '127.0.0.1'  # Server's IP address
+# SERVER_PORT = 12345        # Port to connect to
+
+# def send_file(filename):
+#     # Create a UDP socket
+#     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as client_socket:
+#         # Send the file
+#         with open(filename, 'rb') as f:
+#             print(f"Sending file '{filename}'")
+#             while True:
+#                 data = f.read(1024)
+#                 if not data:
+#                     break
+#                 client_socket.sendto(data, (SERVER_HOST, SERVER_PORT))
+#             # Sending end signal
+#             client_socket.sendto(b'END', (SERVER_HOST, SERVER_PORT))
+#         print("File sent successfully")
+
+# if __name__ == "__main__":
+#     send_file("../large_file.txt")
