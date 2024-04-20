@@ -23,25 +23,45 @@ def custom_print(string, sucesso=True):
 def receber_resposta_servidor(cliente_soc, break_loop=False):
     while True:
         msg = cliente_soc.recv(1024).decode("utf-8")
-        custom_print(msg)
-        if break_loop:
-            return msg
+        if msg.startswith("FILE_RECEIVED"):
+            receber_arquivo(msg)
+        else:
+            custom_print(msg)
+            if break_loop:
+                return msg
 
 
 def converter_e_enviar(cliente_soc, conteudo):
     cliente_soc.send(bytearray(gerar_hash(conteudo), 'utf-8'))
+    
+def receber_arquivo(msg):
+    sender = msg.split(" ")[1]
+    file_name = "fileReceived_from_" + sender + ".txt"
+    data = msg.split(sender + " ")[1]
+    with open(file_name, 'wb') as f:
+        f.write(bytearray(data.strip(), "utf-8"))
+    custom_print("Arquivo recebido de %s, salvo em %s" % (sender, file_name))
+
+
+def enviar_arquivo(cliente_soc, usuario_alvo):
+    with open("./fileToSend.txt", 'rb') as f:
+        data = f.read(1024)
+        msg = bytearray(gerar_hash("FILE_SENT " + usuario_alvo + " "),'utf-8')
+        cliente_soc.sendall(msg + data)
 
 
 def printar_comandos():
     custom_print("--------------------------------------------------------------------\n")
     custom_print(
         "Lista de comandos: \n-QUIT = sair do chat\n-SEND mensagem TO usuario = "
-        "Para enviar uma mensagem, substituindo os campos corretamente.")
+        "Para enviar uma mensagem, substituindo os campos corretamente."
+        "\n-SENDFILE usuario = Para enviar arquivo para o usuário"
+    )
     custom_print("--------------------------------------------------------------------\n")
 
 
 def gerar_hash(msg_param):
-    return hashlib.sha224(bytearray(msg_param, "utf-8")).hexdigest() + "HASH" + msg_param
+    return msg_param
 
 
 def criptografar_conteudo(string_input, is_default=False):
@@ -90,6 +110,9 @@ if __name__ == '__main__':
                         conteudo_criptografado = criptografar_conteudo(string_input)
                         usuarioAlvo = string_input.split("TO")[1].strip()
                         converter_e_enviar(clienteSoc, "SEND %s TO %s" % (conteudo_criptografado, usuarioAlvo))
+                elif comando == 'SENDFILE':
+                    usuarioAlvo = string_input.split(" ")[1].strip()
+                    enviar_arquivo(clienteSoc, usuarioAlvo)
                 else:
                     custom_print('Comando inválido.\nDigite HELP para ver a lista de comandos novamente\n ')
 
