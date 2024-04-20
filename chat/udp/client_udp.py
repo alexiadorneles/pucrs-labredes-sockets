@@ -35,4 +35,4 @@ while True:
         client.close()
         break
     else:
-        client.sendto(f"{name}: {message}".encode(), ("localhost", 9999))
+        client.sendto(f"{message}".encode(), ("localhost", 9999))
