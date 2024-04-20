@@ -21,6 +21,12 @@ def receive_messages():
             print(f"Error receiving messages: {e}")
             break
 
+def forward_file_to_user(target_user, content, nick):
+    print("Sending content: " + content.decode())
+    target_addr = nick_addr[target_user]
+    msg = "FILE_RECEIVED %s " % (nick)
+    server.sendto(msg.encode() + content, target_addr)
+
 def find_nickname(address):
     for nickname, addr in nick_addr.items():
         if addr == address:
@@ -38,6 +44,11 @@ def broadcast_messages():
                 name = decoded_message.split(':')[1].strip()
                 nick_addr[name] = addr  # Add client's nickname and address
                 server.sendto(f"{name} joined!".encode(), addr)  # Send join message to new client
+            elif decoded_message.startswith("FILE_SENT"):
+                    sender_name = find_nickname(addr)
+                    target_user = decoded_message.split(" ")[1]
+                    file_content = decoded_message.split(target_user + " ")[1]
+                    forward_file_to_user(target_user, file_content.encode(), sender_name)
             else:
                 sender_name = find_nickname(addr)
                 print('decoded message', decoded_message)
