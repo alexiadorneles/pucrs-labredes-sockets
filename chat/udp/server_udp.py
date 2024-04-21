@@ -13,7 +13,7 @@ server.bind(("localhost", 9999))
 def receber_mensagem():
     while True:
         try:
-            message, addr = server.recvfrom(1024)
+            message, addr = server.recvfrom(2048)
             messages.put((message, addr))
         except Exception as e:
             print(f"Erro recebendo mensagem: {e}")

@@ -8,7 +8,7 @@ ip = 'localhost'
 nick_con = {}
 
 def receber_mensagem_cliente(con):
-    return con.recv(1024).decode("utf-8")
+    return con.recv(2048).decode("utf-8")
 
 
 def get_usuarios_conectados(prefixo):

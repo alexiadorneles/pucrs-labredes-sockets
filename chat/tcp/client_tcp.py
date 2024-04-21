@@ -15,7 +15,7 @@ def custom_print(string, sucesso=True):
 
 def receber_resposta_servidor(cliente_soc, break_loop=False):
     while True:
-        msg = cliente_soc.recv(1024).decode("utf-8")
+        msg = cliente_soc.recv(2048).decode("utf-8")
         if msg.startswith("FILE_RECEIVED"):
             receber_arquivo(msg)
         else:
@@ -38,7 +38,7 @@ def receber_arquivo(msg):
 
 def enviar_arquivo(cliente_soc, usuario_alvo):
     with open("./fileToSend.txt", 'rb') as f:
-        data = f.read(1024)
+        data = f.read(2048)
         msg = bytearray("FILE_SENT " + usuario_alvo + " ",'utf-8')
         cliente_soc.sendall(msg + data)
 

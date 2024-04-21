@@ -18,7 +18,7 @@ def printar_comandos():
 def receber_mensagens():
     while True:
         try:
-            mensagem, _ = client.recvfrom(1024)
+            mensagem, _ = client.recvfrom(2048)
             if (mensagem.decode().startswith("FILE_RECEIVED")):
                 receber_arquivo(mensagem.decode())
             else:
@@ -44,7 +44,7 @@ def receber_arquivo(msg):
 
 def enviar_arquivo(para):
     with open("./fileToSend.txt", 'rb') as f:
-        data = f.read(1024)
+        data = f.read(2048)
         msg = bytearray("FILE_SENT " + para + " ",'utf-8')
         client.sendto(msg + data, ("localhost", 9999))
 
