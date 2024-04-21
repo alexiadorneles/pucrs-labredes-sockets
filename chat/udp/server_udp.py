@@ -1,68 +1,63 @@
 import socket
 import threading
 import queue
-
+import re
 
 messages = queue.Queue()
 
-nick_addr = {}
-
+nick_end = {}
 
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 server.bind(("localhost", 9999))
 
-def receive_messages():
-    """Thread function to receive messages from clients."""
+def receber_mensagem():
     while True:
         try:
             message, addr = server.recvfrom(1024)
             messages.put((message, addr))
         except Exception as e:
-            print(f"Error receiving messages: {e}")
+            print(f"Erro recebendo mensagem: {e}")
             break
 
-def forward_file_to_user(target_user, content, nick):
-    print("Sending content: " + content.decode())
-    target_addr = nick_addr[target_user]
+def enviar_arquivo(para, conteudo, nick):
+    print("Sending content: " + conteudo.decode())
+    endereco = nick_end[para]
     msg = "FILE_RECEIVED %s " % (nick)
-    server.sendto(msg.encode() + content, target_addr)
+    server.sendto(msg.encode() + conteudo, endereco)
 
-def find_nickname(address):
-    for nickname, addr in nick_addr.items():
-        if addr == address:
+def procurar_nickname(endereco):
+    for nickname, end in nick_end.items():
+        if end == endereco:
             return nickname
-    return None  # Address not found
+    return None 
 
-def broadcast_messages():
-    """Thread function to broadcast messages to all connected clients."""
+def enviar_mensagem():
     while True:
         while not messages.empty():
-            message, addr = messages.get()
-            decoded_message = message.decode()
-            print(decoded_message)
-            if decoded_message.startswith("SIGNUP_TAG:"):
-                name = decoded_message.split(':')[1].strip()
-                nick_addr[name] = addr  # Add client's nickname and address
-                server.sendto(f"{name} joined!".encode(), addr)  # Send join message to new client
-            elif decoded_message.startswith("FILE_SENT"):
-                    sender_name = find_nickname(addr)
-                    target_user = decoded_message.split(" ")[1]
-                    file_content = decoded_message.split(target_user + " ")[1]
-                    forward_file_to_user(target_user, file_content.encode(), sender_name)
+            message, end = messages.get()
+            mensagem = message.decode()
+            if mensagem.startswith("REGISTER:"):
+                nome = mensagem.split(':')[1].strip()
+                nick_end[nome] = end 
+                server.sendto(f"{nome} registrado!".encode(), end) 
+            elif mensagem.startswith("FILE_SENT"):
+                    usuario = procurar_nickname(end)
+                    usuario_alvo = mensagem.split(" ")[1]
+                    conteudo_arquivo = mensagem.split(usuario_alvo + " ")[1]
+                    enviar_arquivo(usuario_alvo, conteudo_arquivo.encode(), usuario)
             else:
-                sender_name = find_nickname(addr)
-                print('decoded message', decoded_message)
-                if decoded_message.startswith("@"):
-                    print('@')
-                    recipient, message_text = decoded_message.split(" ", 1)
-                    recipient = recipient[1:]  # Remove '@' from recipient's nickname
-                    for c_name, c_addr in nick_addr.items():
-                        if c_name == recipient:  # Send message to recipient and sender
-                            server.sendto(f"{sender_name}: {message_text}".encode(), c_addr)
+                usuario = procurar_nickname(end)
+                if mensagem.startswith("SEND"):
+                    usuario_alvo = mensagem.split("TO")[1].strip()
+                    conteudo_mensagem = re.match(r"SEND(.*)TO", mensagem).group(1).strip()
+                    mensagem = "Mensagem de %s: %s" % (usuario, conteudo_mensagem)
+                    for esse_nome, esse_endereco in nick_end.items():
+                        if esse_nome == usuario_alvo: 
+                            server.sendto(f"{mensagem}".encode(), esse_endereco)
 
 
-t1 = threading.Thread(target=receive_messages)
-t2 = threading.Thread(target=broadcast_messages)
+t1 = threading.Thread(target=receber_mensagem)
+t2 = threading.Thread(target=enviar_mensagem)
 
 t1.start()
 t2.start()

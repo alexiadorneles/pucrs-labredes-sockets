@@ -1,11 +1,9 @@
-# -*- coding: UTF-8 -*-
 from socket import *
 from threading import Thread
 import re
-import hashlib
 
 porta = 12001
-ip = 'localhost'  # localhost.
+ip = 'localhost'
 
 nick_con = {}
 
@@ -40,8 +38,7 @@ def enviar_para_usuario(usuario_alvo, msg_remota, nick, con):
     try:
         con_usuario_alvo = nick_con[usuario_alvo]
         conteudo_mensagem = re.match(r"SEND(.*)TO", msg_remota).group(1).strip()
-        conteudo_mensagem_descriptografado = conteudo_mensagem
-        mensagem = "Mensagem de %s: %s" % (nick, conteudo_mensagem_descriptografado)
+        mensagem = "Mensagem de %s: %s" % (nick, conteudo_mensagem)
         enviar_para_cliente(con_usuario_alvo, mensagem)
     except error:
         enviar_para_cliente(con, "O usuário %s não está online no momento" % usuario_alvo)

@@ -2,58 +2,62 @@ import socket
 import threading
 import random
 
-
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
-
 client.bind(("localhost", random.randint(8000, 9000)))
-
-
 name = input("Nickname: ")
 
-def receive_messages():
-    """Function to receive messages from the server."""
+def printar_comandos():
+    print("--------------------------------------------------------------------\n")
+    print(
+        "Lista de comandos: \n-QUIT = sair do chat\n-SEND mensagem TO usuario = "
+        "Para enviar uma mensagem, substituindo os campos corretamente."
+        "\n-SENDFILE usuario = Para enviar arquivo para o usuário"
+    )
+    print("--------------------------------------------------------------------\n")
+
+def receber_mensagens():
     while True:
         try:
-            message, _ = client.recvfrom(1024)
-            if (message.decode().startswith("FILE_RECEIVED")):
-                receive_file(message.decode())
+            mensagem, _ = client.recvfrom(1024)
+            if (mensagem.decode().startswith("FILE_RECEIVED")):
+                receber_arquivo(mensagem.decode())
             else:
-                print(message.decode())
+                print(mensagem.decode())
         except Exception as e:
-            print(f"An error occurred: {e}")
+            print(f"Erro: {e}")
             break
 
 
-t = threading.Thread(target=receive_messages)
+t = threading.Thread(target=receber_mensagens)
 t.start()
 
-client.sendto(f"SIGNUP_TAG: {name}".encode(), ("localhost", 9999))
+client.sendto(f"REGISTER: {name}".encode(), ("localhost", 9999))
 
-def receive_file(msg):
-    sender = msg.split(" ")[1]
-    file_name = "fileReceived_from_" + sender + ".txt"
-    data = msg.split(sender + " ")[1]
-    with open(file_name, 'wb') as f:
-        f.write(bytearray(data.strip(), "utf-8"))
-    print("Arquivo recebido de %s, salvo em %s" % (sender, file_name))
+def receber_arquivo(msg):
+    usuario = msg.split(" ")[1]
+    nome_arquivo = "fileReceived_from_" + usuario + ".txt"
+    conteudo = msg.split(usuario + " ")[1]
+    with open(nome_arquivo, 'wb') as f:
+        f.write(bytearray(conteudo.strip(), "utf-8"))
+    print("Arquivo recebido de %s, salvo em %s" % (usuario, nome_arquivo))
 
 
-def send_file(to):
+def enviar_arquivo(para):
     with open("./fileToSend.txt", 'rb') as f:
         data = f.read(1024)
-        msg = bytearray("FILE_SENT " + to + " ",'utf-8')
+        msg = bytearray("FILE_SENT " + para + " ",'utf-8')
         client.sendto(msg + data, ("localhost", 9999))
 
+printar_comandos();
 
 while True:
-    message = input()
-    if message == "!q":
+    texto = input()
+    if texto == "!q":
         print("Exiting chat...")
         client.close()
         break
-    elif message.startswith("SENDFILE"):
-        user = message.split("@")[1].strip()
-        send_file(user)
+    elif texto.startswith("SENDFILE"):
+        usuario = texto.split(" ")[1].strip()
+        enviar_arquivo(usuario)
     else:
-        client.sendto(f"{message}".encode(), ("localhost", 9999))
+        client.sendto(f"{texto}".encode(), ("localhost", 9999))
