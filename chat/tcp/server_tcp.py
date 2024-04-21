@@ -36,10 +36,6 @@ def inicia_servidor(servidor_soc):
         t = Thread(target=trata_nova_conexao, args=(conexao, end_remoto), daemon=True)
         t.start()
 
-
-def analisar_hash(msg):
-    return True
-
 def enviar_para_usuario(usuario_alvo, msg_remota, nick, con):
     try:
         con_usuario_alvo = nick_con[usuario_alvo]
@@ -75,34 +71,31 @@ def trata_nova_conexao(con, end_remoto):
         while True:
             msg_remota = receber_mensagem_cliente(con)
 
-            if analisar_hash(msg_remota):
-                if msg_remota == '' or msg_remota == 'SAIR':
-                    print("A conexao com ", nick, " foi fechada.\n")
-                    con.close()
-                    del nick_con[nick]
-                    break
-                
-                elif msg_remota.startswith("FILE_SENT"):
-                    usuario_alvo = msg_remota.split(" ")[1]
-                    file_content = msg_remota.split(usuario_alvo + " ")[1]
+            if msg_remota == '' or msg_remota == 'SAIR':
+                print("A conexao com ", nick, " foi fechada.\n")
+                con.close()
+                del nick_con[nick]
+                break
+            
+            elif msg_remota.startswith("FILE_SENT"):
+                usuario_alvo = msg_remota.split(" ")[1]
+                file_content = msg_remota.split(usuario_alvo + " ")[1]
+                if usuario_alvo not in list(nick_con.keys()):
+                    enviar_para_cliente(con, "O usuário %s não está conectado" % usuario_alvo)
+                else:
+                    enviar_arquivo_para_usuario(usuario_alvo, file_content, nick, con)
+
+            elif msg_remota.split()[0] == 'SEND':
+                if "TO" not in msg_remota or len(msg_remota.split("TO")) < 2:
+                    enviar_para_cliente(con,
+                                        "Destinatário não especificado\nComando para mensagens: SEND mensagem TO "
+                                        "usuario")
+                elif "TO" in msg_remota and len(msg_remota.split("TO")) >= 1:
+                    usuario_alvo = msg_remota.split("TO")[1].strip()
                     if usuario_alvo not in list(nick_con.keys()):
                         enviar_para_cliente(con, "O usuário %s não está conectado" % usuario_alvo)
                     else:
-                        enviar_arquivo_para_usuario(usuario_alvo, file_content, nick, con)
-
-                elif msg_remota.split()[0] == 'SEND':
-                    if "TO" not in msg_remota or len(msg_remota.split("TO")) < 2:
-                        enviar_para_cliente(con,
-                                            "Destinatário não especificado\nComando para mensagens: SEND mensagem TO "
-                                            "usuario")
-                    elif "TO" in msg_remota and len(msg_remota.split("TO")) >= 1:
-                        usuario_alvo = msg_remota.split("TO")[1].strip()
-                        if usuario_alvo not in list(nick_con.keys()):
-                            enviar_para_cliente(con, "O usuário %s não está conectado" % usuario_alvo)
-                        else:
-                            enviar_para_usuario(usuario_alvo, msg_remota, nick, con)
-            else:
-                enviar_para_cliente(con, "Integridade violada")
+                        enviar_para_usuario(usuario_alvo, msg_remota, nick, con)
 
 
 # Função principal.

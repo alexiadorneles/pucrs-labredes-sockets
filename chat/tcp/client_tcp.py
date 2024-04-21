@@ -1,13 +1,6 @@
-# -*- coding: UTF-8 -*-
 from socket import*
 from threading import Thread
-import hashlib
-import codecs
-import sys
 import re
-
-# Para codificação no terminal do windows
-# sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 
 porta = 12001
 host = 'localhost'
@@ -32,7 +25,7 @@ def receber_resposta_servidor(cliente_soc, break_loop=False):
 
 
 def converter_e_enviar(cliente_soc, conteudo):
-    cliente_soc.send(bytearray(gerar_hash(conteudo), 'utf-8'))
+    cliente_soc.send(bytearray(conteudo, 'utf-8'))
     
 def receber_arquivo(msg):
     sender = msg.split(" ")[1]
@@ -46,7 +39,7 @@ def receber_arquivo(msg):
 def enviar_arquivo(cliente_soc, usuario_alvo):
     with open("./fileToSend.txt", 'rb') as f:
         data = f.read(1024)
-        msg = bytearray(gerar_hash("FILE_SENT " + usuario_alvo + " "),'utf-8')
+        msg = bytearray("FILE_SENT " + usuario_alvo + " ",'utf-8')
         cliente_soc.sendall(msg + data)
 
 
@@ -59,17 +52,8 @@ def printar_comandos():
     )
     custom_print("--------------------------------------------------------------------\n")
 
-
-def gerar_hash(msg_param):
-    return msg_param
-
-
-def criptografar_conteudo(string_input, is_default=False):
-    conteudo_mensagem = re.match(r"SEND(.*)", string_input).group(1).strip() \
-        if is_default \
-        else re.match(r"SEND(.*)TO", string_input).group(1).strip()
-    return conteudo_mensagem
-
+def extrair_conteudo(string_input):
+    return re.match(r"SEND(.*)TO", string_input).group(1).strip()
 
 if __name__ == '__main__':
     try:
@@ -101,15 +85,10 @@ if __name__ == '__main__':
                     converter_e_enviar(clienteSoc, "SAIR")
                     clienteSoc.close()
                     exit(1)
-                    break
                 elif comando == 'SEND':
-                    if "TO" not in string_input:
-                        conteudo_criptografado = criptografar_conteudo(string_input, True)
-                        converter_e_enviar(clienteSoc, "SEND %s" % conteudo_criptografado)
-                    else:
-                        conteudo_criptografado = criptografar_conteudo(string_input)
-                        usuarioAlvo = string_input.split("TO")[1].strip()
-                        converter_e_enviar(clienteSoc, "SEND %s TO %s" % (conteudo_criptografado, usuarioAlvo))
+                    conteudo_criptografado = extrair_conteudo(string_input)
+                    usuarioAlvo = string_input.split("TO")[1].strip()
+                    converter_e_enviar(clienteSoc, "SEND %s TO %s" % (conteudo_criptografado, usuarioAlvo))
                 elif comando == 'SENDFILE':
                     usuarioAlvo = string_input.split(" ")[1].strip()
                     enviar_arquivo(clienteSoc, usuarioAlvo)
