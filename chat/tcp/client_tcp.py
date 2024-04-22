@@ -64,10 +64,11 @@ def make_hash(msg_param):
     return msg_param
 
 
-def encrypt_content(string_input, is_default=False):
-    message_content = re.match(r"SEND(.*)", string_input).group(1).strip() \
-        if is_default \
-        else re.match(r"SEND(.*)TO", string_input).group(1).strip()
+def encrypt_content(string_input):
+    print('string input', string_input)
+    match = re.match(r"@(.*)", string_input)
+    message_content = match.group(1).strip()
+    print('message content', message_content)
     return message_content
 
 
@@ -93,28 +94,20 @@ if __name__ == '__main__':
 
         print_comands()
         while True:
-            string_input = input('')
-            if string_input is not '':
-                comand = string_input.split()[0]
-                if comand == 'QUIT':
+            message = input()
+            if message == '!q':
                     custom_print("Thanks for using Terminal Chat!\nCome Back soon ;)")
                     convert_and_send(clientSoc, "SAIR")
                     clientSoc.close()
                     exit(1)
                     break
-                elif comand == 'SEND':
-                    if "TO" not in string_input:
-                        encrypted_content = encrypt_content(string_input, True)
-                        convert_and_send(clientSoc, "SEND %s" % encrypted_content)
-                    else:
-                        encrypted_content = encrypt_content(string_input)
-                        targetUser = string_input.split("TO")[1].strip()
-                        convert_and_send(clientSoc, "SEND %s TO %s" % (encrypted_content, targetUser))
-                elif comand == 'SENDFILE':
-                    targetUser = string_input.split(" ")[1].strip()
+            elif message.startswith('SENDFILE'):
+                    targetUser = message.split("@")[1].split()[0].strip()
                     send_file(clientSoc, targetUser)
-                else:
-                    custom_print('Invalid comand.\n ')
+            else:
+                recipient, message_text = message.split(" ", 1)
+                # targetUser = message.split("@")[1].split()[0].strip()
+                convert_and_send(clientSoc, "%s %s" % (recipient, message_text))
 
     except timeout:
         custom_print("Timeout!", False)

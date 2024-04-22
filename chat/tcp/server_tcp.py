@@ -43,9 +43,7 @@ def analyse_hash(msg):
 def send_to_user(target_user, msg_remote, nick, con):
     try:
         con_target_user = nick_con[target_user]
-        message_content = re.match(r"SEND(.*)TO", msg_remote).group(1).strip()
-        message_content_decrypted = message_content
-        msg = "Message from %s: %s" % (nick, message_content_decrypted)
+        msg = "Message from %s: %s" % (nick, msg_remote)
         send_to_client(con_target_user, msg)
     except error:
         send_to_client(con, "User %s is not online at the moment" % target_user)
@@ -89,18 +87,14 @@ def treat_new_conection(con, end_remote):
                         send_to_client(con, "User %s is not connected" % target_user)
                     else:
                         send_file_to_user(target_user, file_content, nick, con)
-
-                elif msg_remote.split()[0] == 'SEND':
-                    if "TO" not in msg_remote or len(msg_remote.split("TO")) < 2:
-                        send_to_client(con,
-                                            "Receiver not specified\nComando para mensagens: @user  "
-                                            "message")
-                    elif "TO" in msg_remote and len(msg_remote.split("TO")) >= 1:
-                        target_user = msg_remote.split("TO")[1].strip()
+                
+                elif msg_remote.startswith("@"):
+                        recipient, msg = msg_remote.split(" ", 1)
+                        target_user = msg_remote.split("@")[1].split()[0].strip()
                         if target_user not in list(nick_con.keys()):
                             send_to_client(con, "User %s not connected" % target_user)
                         else:
-                            send_to_user(target_user, msg_remote, nick, con)
+                            send_to_user(target_user, msg, nick, con)
             else:
                 send_to_client(con, "Integrity violated")
 
