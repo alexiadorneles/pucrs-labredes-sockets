@@ -4,123 +4,123 @@ from threading import Thread
 import re
 import hashlib
 
-porta = 12001
+port = 12001
 ip = 'localhost'  # localhost.
 
 nick_con = {}
 
-def receber_mensagem_cliente(con):
+def receive_message_cleint(con):
     return con.recv(1024).decode("utf-8")
 
 
-def get_usuarios_conectados(prefixo):
+def get_conected_users(prefix):
     if len(nick_con) > 1:
-        return prefixo.format("\n - " + "\n - ".join(list(nick_con.keys())) + "\n")
+        return prefix.format("\n - " + "\n - ".join(list(nick_con.keys())) + "\n")
     else:
-        return prefixo.format("".join(list(nick_con.keys())) + "\n")
+        return prefix.format("".join(list(nick_con.keys())) + "\n")
 
 
-def enviar_para_cliente(con, conteudo):
-    con.send(bytearray(conteudo, "utf-8"))
+def send_to_client(con, content):
+    con.send(bytearray(content, "utf-8"))
 
 
-def inicia_servidor(servidor_soc):
-    servidor_soc.bind((ip, porta))
-    servidor_soc.listen(60)
+def start_server(server_soc):
+    server_soc.bind((ip, port))
+    server_soc.listen(60)
 
-    print("Servidor ativo!\nAguardando conexões.")
+    print("Server active!\Waiting conections.")
 
     while True:
-        conexao, end_remoto = servidor_soc.accept()
-        enviar_para_cliente(conexao, get_usuarios_conectados("Usuários conectados: {}"))
-        t = Thread(target=trata_nova_conexao, args=(conexao, end_remoto), daemon=True)
+        conection, end_remote = server_soc.accept()
+        send_to_client(conection, get_conected_users("Users conented: {}"))
+        t = Thread(target=treat_new_conection, args=(conection, end_remote), daemon=True)
         t.start()
 
 
-def analisar_hash(msg):
+def analyse_hash(msg):
     return True
 
-def enviar_para_usuario(usuario_alvo, msg_remota, nick, con):
+def send_to_user(target_user, msg_remote, nick, con):
     try:
-        con_usuario_alvo = nick_con[usuario_alvo]
-        conteudo_mensagem = re.match(r"SEND(.*)TO", msg_remota).group(1).strip()
-        conteudo_mensagem_descriptografado = conteudo_mensagem
-        mensagem = "Mensagem de %s: %s" % (nick, conteudo_mensagem_descriptografado)
-        enviar_para_cliente(con_usuario_alvo, mensagem)
+        con_target_user = nick_con[target_user]
+        message_content = re.match(r"SEND(.*)TO", msg_remote).group(1).strip()
+        message_content_decrypted = message_content
+        msg = "Message from %s: %s" % (nick, message_content_decrypted)
+        send_to_client(con_target_user, msg)
     except error:
-        enviar_para_cliente(con, "O usuário %s não está online no momento" % usuario_alvo)
+        send_to_client(con, "User %s is not online at the moment" % target_user)
 
-def enviar_arquivo_para_usuario(usuario_alvo, conteudo_mensagem, nick, con):
-    print("Sending content: " + conteudo_mensagem)
+def send_file_to_user(target_user, message_coontent, nick, con):
+    print("Sending content: " + message_coontent)
     try:
-        con_usuario_alvo = nick_con[usuario_alvo]
-        mensagem = "FILE_RECEIVED %s " % (nick)
-        con_usuario_alvo.sendall(bytearray(mensagem + conteudo_mensagem, "utf-8"))
+        con_target_user = nick_con[target_user]
+        msg = "FILE_RECEIVED %s " % (nick)
+        con_target_user.sendall(bytearray(msg + message_coontent, "utf-8"))
     except error:
-        enviar_para_cliente(con, "O usuário %s não está online no momento" % usuario_alvo)
+        send_to_client(con, "User %s is not online at the moment" % target_user)
 
 
-def trata_nova_conexao(con, end_remoto):
-    msg = receber_mensagem_cliente(con)
+def treat_new_conection(con, end_remote):
+    msg = receive_message_cleint(con)
     nick = msg.strip().split(" ")[0]
 
     if nick in list(nick_con.keys()):
-        resposta = nick + " ja esta em uso." + get_usuarios_conectados("Nicks em uso: {}")
-        enviar_para_cliente(con, resposta)
-        trata_nova_conexao(con, end_remoto)
+        response = nick + " already in use." + get_conected_users("Nicks in use: {}")
+        send_to_client(con, response)
+        treat_new_conection(con, end_remote)
     else:
         nick_con[nick] = con
-        enviar_para_cliente(con, nick + " conectado com sucesso.\n")
+        send_to_client(con, nick + " connected with sucess.\n")
 
         while True:
-            msg_remota = receber_mensagem_cliente(con)
+            msg_remote = receive_message_cleint(con)
 
-            if analisar_hash(msg_remota):
-                if msg_remota == '' or msg_remota == 'SAIR':
-                    print("A conexao com ", nick, " foi fechada.\n")
+            if analyse_hash(msg_remote):
+                if msg_remote == '' or msg_remote == 'SAIR':
+                    print("Conection with ", nick, " was closed.\n")
                     con.close()
                     del nick_con[nick]
                     break
                 
-                elif msg_remota.startswith("FILE_SENT"):
-                    usuario_alvo = msg_remota.split(" ")[1]
-                    file_content = msg_remota.split(usuario_alvo + " ")[1]
-                    if usuario_alvo not in list(nick_con.keys()):
-                        enviar_para_cliente(con, "O usuário %s não está conectado" % usuario_alvo)
+                elif msg_remote.startswith("FILE_SENT"):
+                    target_user = msg_remote.split(" ")[1]
+                    file_content = msg_remote.split(target_user + " ")[1]
+                    if target_user not in list(nick_con.keys()):
+                        send_to_client(con, "User %s is not connected" % target_user)
                     else:
-                        enviar_arquivo_para_usuario(usuario_alvo, file_content, nick, con)
+                        send_file_to_user(target_user, file_content, nick, con)
 
-                elif msg_remota.split()[0] == 'SEND':
-                    if "TO" not in msg_remota or len(msg_remota.split("TO")) < 2:
-                        enviar_para_cliente(con,
-                                            "Destinatário não especificado\nComando para mensagens: SEND mensagem TO "
-                                            "usuario")
-                    elif "TO" in msg_remota and len(msg_remota.split("TO")) >= 1:
-                        usuario_alvo = msg_remota.split("TO")[1].strip()
-                        if usuario_alvo not in list(nick_con.keys()):
-                            enviar_para_cliente(con, "O usuário %s não está conectado" % usuario_alvo)
+                elif msg_remote.split()[0] == 'SEND':
+                    if "TO" not in msg_remote or len(msg_remote.split("TO")) < 2:
+                        send_to_client(con,
+                                            "Receiver not specified\nComando para mensagens: @user  "
+                                            "message")
+                    elif "TO" in msg_remote and len(msg_remote.split("TO")) >= 1:
+                        target_user = msg_remote.split("TO")[1].strip()
+                        if target_user not in list(nick_con.keys()):
+                            send_to_client(con, "User %s not connected" % target_user)
                         else:
-                            enviar_para_usuario(usuario_alvo, msg_remota, nick, con)
+                            send_to_user(target_user, msg_remote, nick, con)
             else:
-                enviar_para_cliente(con, "Integridade violada")
+                send_to_client(con, "Integrity violated")
 
 
-# Função principal.
+# MAIN.
 if __name__ == '__main__':
     try:
-        servidorSoc = socket(AF_INET, SOCK_STREAM)  # Socket TCP
-        t2 = Thread(target=inicia_servidor, args=(servidorSoc,), daemon=True)
+        serverSoc = socket(AF_INET, SOCK_STREAM)  # Socket TCP
+        t2 = Thread(target=start_server, args=(serverSoc,), daemon=True)
         t2.start()
 
         while True:
             aux = input('')
             if aux == 'FIM':
-                print("Tchau!\n")
-                servidorSoc.close()  # nunca!
+                print("Bye!\n")
+                serverSoc.close()  # nunca!
                 exit(1)
 
     except timeout:
-        print("Tempo exedido!")
+        print("Timeout!")
     except error:
-        print("Erro no Servidor:", error)
+        print("Error on server:", error)
         exit(1)

@@ -36,7 +36,7 @@ def receive_file(msg):
     data = msg.split(sender + " ")[1]
     with open(file_name, 'wb') as f:
         f.write(bytearray(data.strip(), "utf-8"))
-    print("Arquivo recebido de %s, salvo em %s" % (sender, file_name))
+    print("File received from %s, saved in %s" % (sender, file_name))
 
 
 def send_file(to):
