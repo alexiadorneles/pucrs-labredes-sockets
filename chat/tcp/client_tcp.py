@@ -4,6 +4,7 @@ import re
 
 porta = 12001
 host = 'localhost'
+BUFFER_SIZE=1024
 
 
 def custom_print(string, sucesso=True):
@@ -15,9 +16,10 @@ def custom_print(string, sucesso=True):
 
 def receber_resposta_servidor(cliente_soc, break_loop=False):
     while True:
-        msg = cliente_soc.recv(2048).decode("utf-8")
+        msg = cliente_soc.recv(BUFFER_SIZE).decode("utf-8")
         if msg.startswith("FILE_RECEIVED"):
-            receber_arquivo(msg)
+            print('received the file received message!')
+            receber_arquivo(msg, cliente_soc)
         else:
             custom_print(msg)
             if break_loop:
@@ -27,20 +29,25 @@ def receber_resposta_servidor(cliente_soc, break_loop=False):
 def converter_e_enviar(cliente_soc, conteudo):
     cliente_soc.send(bytearray(conteudo, 'utf-8'))
     
-def receber_arquivo(msg):
+def receber_arquivo(msg, cliente_soc):
     sender = msg.split(" ")[1]
     file_name = "fileReceived_from_" + sender + ".txt"
-    data = msg.split(sender + " ")[1]
+    print('waiting forward to finish...')
+    data = cliente_soc.recv(BUFFER_SIZE)
+    print('data received, saving in txt...')
     with open(file_name, 'wb') as f:
-        f.write(bytearray(data.strip(), "utf-8"))
+        f.write(data)
     custom_print("Arquivo recebido de %s, salvo em %s" % (sender, file_name))
 
 
 def enviar_arquivo(cliente_soc, usuario_alvo):
     with open("./fileToSend.txt", 'rb') as f:
-        data = f.read(2048)
-        msg = bytearray("FILE_SENT " + usuario_alvo + " ",'utf-8')
-        cliente_soc.sendall(msg + data)
+        data = f.read(BUFFER_SIZE)
+        msg = "FILE_SENT " + usuario_alvo + " "
+        converter_e_enviar(cliente_soc, msg)
+        print('sending file')
+        cliente_soc.sendall(data)
+        print('file sent')
 
 
 def printar_comandos():

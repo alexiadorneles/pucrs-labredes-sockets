@@ -4,11 +4,12 @@ import re
 
 porta = 12001
 ip = 'localhost'
+BUFFER_SIZE=1024
 
 nick_con = {}
 
 def receber_mensagem_cliente(con):
-    return con.recv(2048).decode("utf-8")
+    return con.recv(BUFFER_SIZE).decode("utf-8")
 
 
 def get_usuarios_conectados(prefixo):
@@ -43,12 +44,18 @@ def enviar_para_usuario(usuario_alvo, msg_remota, nick, con):
     except error:
         enviar_para_cliente(con, "O usuário %s não está online no momento" % usuario_alvo)
 
-def enviar_arquivo_para_usuario(usuario_alvo, conteudo_mensagem, nick, con):
-    print("Sending content: " + conteudo_mensagem)
+def enviar_arquivo_para_usuario(usuario_alvo, nick, con):
+    # print("Sending content: " + conteudo_mensagem)
     try:
         con_usuario_alvo = nick_con[usuario_alvo]
         mensagem = "FILE_RECEIVED %s " % (nick)
-        con_usuario_alvo.sendall(bytearray(mensagem + conteudo_mensagem, "utf-8"))
+        print('making forward')
+        con_usuario_alvo.send(bytearray(mensagem, "utf-8"))
+        print('forward signal sent')
+        conteudo_arquivo = con.recv(BUFFER_SIZE)
+        print(conteudo_arquivo)
+        con_usuario_alvo.sendall(conteudo_arquivo)
+        print('file content forwarded')
     except error:
         enviar_para_cliente(con, "O usuário %s não está online no momento" % usuario_alvo)
 
@@ -76,11 +83,12 @@ def trata_nova_conexao(con, end_remoto):
             
             elif msg_remota.startswith("FILE_SENT"):
                 usuario_alvo = msg_remota.split(" ")[1]
-                file_content = msg_remota.split(usuario_alvo + " ")[1]
+                print('waiting for file to ' + usuario_alvo)
+                print('file received')
                 if usuario_alvo not in list(nick_con.keys()):
                     enviar_para_cliente(con, "O usuário %s não está conectado" % usuario_alvo)
                 else:
-                    enviar_arquivo_para_usuario(usuario_alvo, file_content, nick, con)
+                    enviar_arquivo_para_usuario(usuario_alvo, nick, con)
 
             elif msg_remota.split()[0] == 'SEND':
                 if "TO" not in msg_remota or len(msg_remota.split("TO")) < 2:
